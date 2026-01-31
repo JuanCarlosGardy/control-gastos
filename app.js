@@ -1,312 +1,141 @@
-// app.js (ESM)
-// 1) Conecta Firebase
-// 2) Guarda gastos en Firestore
-// 3) Genera correlativo seguro por año: GAS-YYYY-0001
-// 4) Lista, filtra, elimina, imprime
+// app.js — MÓDULO FIREBASE (GitHub Pages compatible)
+console.log("app.js cargado OK");
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+// 🔥 IMPORTS FIREBASE (v9 modular desde CDN)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, doc, runTransaction,
-  query, orderBy, onSnapshot, deleteDoc
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* =========================
-   PASO A: PEGA AQUÍ TU CONFIG DE FIREBASE
-   ========================= */
+// ===============================
+// 1) CONFIGURACIÓN FIREBASE
+// ===============================
+// ⛔️ PEGA AQUÍ TU CONFIGURACIÓN REAL ⛔️
 const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_MESSAGING_SENDER_ID",
+  appId: "TU_APP_ID",
+};
 
-    apiKey: "AIzaSyD22iGuezGjFOyV3EvXVFXYWxN4GM7Fk1Q",
-
-    authDomain: "gastos-obrantis.firebaseapp.com",
-
-    projectId: "gastos-obrantis",
-
-    storageBucket: "gastos-obrantis.firebasestorage.app",
-
-    messagingSenderId: "634229985957",
-
-    appId: "1:634229985957:web:3457c773c98d775207734c"
-
-  };
-
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* =========================
-   UI Helpers
-   ========================= */
-const $ = (id) => document.getElementById(id);
+// ===============================
+// 2) REFERENCIAS AL DOM
+// ===============================
+const form = document.getElementById("gastoForm");
+const fechaInput = document.getElementById("fecha");
+const conceptoInput = document.getElementById("concepto");
+const categoriaInput = document.getElementById("categoria");
+const importeInput = document.getElementById("importe");
+const listaGastos = document.getElementById("listaGastos");
+const btnImprimirUltimo = document.getElementById("btnImprimirUltimo");
 
-const form = $("expenseForm");
-const statusEl = $("status");
-const tbody = $("tbody");
-const btnPrint = $("btnPrint");
-const btnRefresh = $("btnRefresh");
-const btnPrintLast = $("btnPrintLast");
-const filterText = $("filterText");
-const filterYear = $("filterYear");
-
-const sumBase = $("sumBase");
-const sumVat = $("sumVat");
-const sumTotal = $("sumTotal");
-
-function euro(n){
-  return (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// ===============================
+// 3) FECHA AUTOMÁTICA (HOY)
+// ===============================
+function setFechaHoy() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  fechaInput.value = hoy;
 }
 
-function yearFromDate(isoDate){
-  // isoDate "YYYY-MM-DD"
-  return Number(String(isoDate).slice(0,4));
-}
+// ===============================
+// 4) CARGAR GASTOS
+// ===============================
+async function cargarGastos() {
+  listaGastos.innerHTML = "";
 
-function pad4(n){
-  return String(n).padStart(4, "0");
-}
+  const q = query(
+    collection(db, "gastos"),
+    orderBy("fecha", "desc"),
+    orderBy("createdAt", "desc")
+  );
 
-function setStatus(msg, isError=false){
-  statusEl.textContent = msg;
-  statusEl.style.color = isError ? "#ffb4b4" : "";
-}
+  const snapshot = await getDocs(q);
 
-/* =========================
-   Correlativo seguro (transacción)
-   Doc contador: counters/gastos_YYYY
-   Campo: value (number)
-   ========================= */
-async function nextExpenseNumber(year){
-  const counterRef = doc(db, "counters", `gastos_${year}`);
+  snapshot.forEach((doc) => {
+    const g = doc.data();
 
-  const next = await runTransaction(db, async (tx) => {
-    const snap = await tx.get(counterRef);
-    let current = 0;
-    if (snap.exists()) {
-      current = Number(snap.data().value || 0);
-    }
-    const updated = current + 1;
-    tx.set(counterRef, { value: updated }, { merge: true });
-    return updated;
-  });
-
-  return `GAS-${year}-${pad4(next)}`;
-}
-
-/* =========================
-   Firestore: colección de gastos
-   ========================= */
-const expensesCol = collection(db, "expenses");
-
-/* =========================
-   Estado local (para filtros)
-   ========================= */
-let allExpenses = []; // array de {id, ...data}
-
-/* =========================
-   Render tabla + totales
-   ========================= */
-function render(){
-function printLastExpense() {
-  if (!allExpenses || allExpenses.length === 0) {
-    setStatus("No hay gastos para imprimir.", true);
-    return;
-  }
-
-  // Como el listado ya viene ordenado por date desc + createdAt desc,
-  // el primero es el "último" registrado
-  const last = allExpenses[0];
-
-  // Ocultar todas las filas excepto la del último número
-  const rows = document.querySelectorAll("#tbody tr");
-  rows.forEach(tr => {
-    const text = tr.innerText || "";
-    tr.style.display = text.includes(last.number) ? "" : "none";
-  });
-
-  // Imprimir
-  window.print();
-
-  // Restaurar filas tras imprimir
-  rows.forEach(tr => tr.style.display = "");
-}
-  const txt = (filterText.value || "").trim().toLowerCase();
-  const yr = filterYear.value;
-
-  const filtered = allExpenses.filter(e => {
-    const matchesText =
-      !txt ||
-      (e.concept || "").toLowerCase().includes(txt) ||
-      (e.supplier || "").toLowerCase().includes(txt) ||
-      (e.category || "").toLowerCase().includes(txt) ||
-      (e.number || "").toLowerCase().includes(txt);
-
-    const matchesYear =
-      !yr || String(e.year) === String(yr);
-
-    return matchesText && matchesYear;
-  });
-
-  tbody.innerHTML = "";
-
-  let sBase=0, sVat=0, sTot=0;
-
-  for(const e of filtered){
-    const base = Number(e.amount) || 0;
-    const vatPct = Number(e.vatPct) || 0;
-    const vat = base * (vatPct/100);
-    const total = base + vat;
-
-    sBase += base;
-    sVat += vat;
-    sTot += total;
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><strong>${e.number || ""}</strong></td>
-      <td>${e.date || ""}</td>
-      <td>${escapeHtml(e.concept || "")}</td>
-      <td>${escapeHtml(e.supplier || "")}</td>
-      <td>${escapeHtml(e.category || "")}</td>
-      <td class="right">${euro(base)}</td>
-      <td class="right">${euro(vat)}</td>
-      <td class="right"><strong>${euro(total)}</strong></td>
-      <td>${escapeHtml(e.payment || "")}</td>
-      <td class="no-print">
-        <button data-del="${e.id}" type="button">Eliminar</button>
-      </td>
+    const div = document.createElement("div");
+    div.className = "gasto-item";
+    div.innerHTML = `
+      <strong>${g.fecha}</strong> · ${g.concepto}
+      <br />
+      <small>${g.categoria}</small>
+      <span style="float:right">${Number(g.importe).toFixed(2)} €</span>
     `;
-    tbody.appendChild(tr);
-  }
 
-  sumBase.textContent = euro(sBase);
-  sumVat.textContent = euro(sVat);
-  sumTotal.textContent = euro(sTot);
-}
-
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-/* =========================
-   Cargar años en el filtro
-   ========================= */
-function refreshYearOptions(){
-  const years = Array.from(new Set(allExpenses.map(e => e.year))).sort((a,b)=>b-a);
-  const current = filterYear.value;
-
-  filterYear.innerHTML = `<option value="">Todos los años</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
-
-  // Mantener selección si existía
-  if (current && years.includes(Number(current))) filterYear.value = current;
-}
-
-/* =========================
-   Suscripción en tiempo real
-   ========================= */
-function startLive(){
-  const q = query(expensesCol, orderBy("date", "desc"), orderBy("createdAt", "desc"));
-
-  onSnapshot(q, (snap) => {
-    allExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    refreshYearOptions();
-    render();
-    setStatus(`Cargados ${allExpenses.length} registros.`);
-  }, (err) => {
-    console.error(err);
-    setStatus("Error cargando datos. Revisa configuración y reglas de Firestore.", true);
+    listaGastos.appendChild(div);
   });
 }
 
-/* =========================
-   Guardar gasto
-   ========================= */
-form.addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  setStatus("Guardando...");
+// ===============================
+// 5) GUARDAR GASTO
+// ===============================
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  const date = $("date").value;
-  const concept = $("concept").value.trim();
-  const supplier = $("supplier").value.trim();
-  const category = $("category").value;
-  const amount = Number($("amount").value);
-  const vatPct = Number($("vat").value || 0);
-  const payment = $("payment").value;
-  const notes = $("notes").value.trim();
+  const gasto = {
+    fecha: fechaInput.value,
+    concepto: conceptoInput.value.trim(),
+    categoria: categoriaInput.value,
+    importe: parseFloat(importeInput.value),
+    createdAt: new Date(),
+  };
 
-  if(!date || !concept || !category || !payment || !(amount >= 0)){
-    setStatus("Faltan datos obligatorios o el importe no es válido.", true);
+  if (!gasto.fecha || !gasto.concepto || !gasto.categoria || isNaN(gasto.importe)) {
+    alert("Completa todos los campos correctamente");
     return;
   }
 
-  try{
-    const year = yearFromDate(date);
-    const number = await nextExpenseNumber(year);
+  await addDoc(collection(db, "gastos"), gasto);
 
-    await addDoc(expensesCol, {
-      number,
-      year,
-      date,
-      concept,
-      supplier,
-      category,
-      amount,
-      vatPct,
-      payment,
-      notes,
-      createdAt: Date.now()
-    });
-
-    form.reset();
-    // Sugerencia: dejar fecha de hoy tras reset
-    $("date").valueAsDate = new Date();
-
-    setStatus(`Guardado: ${number}`);
-  }catch(err){
-    console.error(err);
-    setStatus("No se pudo guardar. Revisa Firebase Config / Reglas / Permisos.", true);
-  }
+  form.reset();
+  setFechaHoy();
+  cargarGastos();
 });
 
-/* =========================
-   Eliminar
-   ========================= */
-tbody.addEventListener("click", async (ev) => {
-  const btn = ev.target.closest("button");
-  if(!btn) return;
+// ===============================
+// 6) IMPRIMIR ÚLTIMO GASTO
+// ===============================
+btnImprimirUltimo.addEventListener("click", async () => {
+  const q = query(
+    collection(db, "gastos"),
+    orderBy("createdAt", "desc"),
+    limit(1)
+  );
 
-  const id = btn.getAttribute("data-del");
-  if(!id) return;
-
-  const ok = confirm("¿Eliminar este registro?");
-  if(!ok) return;
-
-  try{
-    await deleteDoc(doc(db, "expenses", id));
-    setStatus("Registro eliminado.");
-  }catch(err){
-    console.error(err);
-    setStatus("No se pudo eliminar.", true);
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) {
+    alert("No hay gastos para imprimir");
+    return;
   }
+
+  const g = snapshot.docs[0].data();
+
+  const ventana = window.open("", "_blank");
+  ventana.document.write(`
+    <h2>Último gasto</h2>
+    <p><strong>Fecha:</strong> ${g.fecha}</p>
+    <p><strong>Concepto:</strong> ${g.concepto}</p>
+    <p><strong>Categoría:</strong> ${g.categoria}</p>
+    <p><strong>Importe:</strong> ${Number(g.importe).toFixed(2)} €</p>
+  `);
+  ventana.print();
 });
 
-/* =========================
-   Filtros + imprimir
-   ========================= */
-filterText.addEventListener("input", render);
-filterYear.addEventListener("change", render);
-
-btnPrint.addEventListener("click", () => window.print());
-btnPrintLast.addEventListener("click", printLastExpense);
-btnRefresh.addEventListener("click", () => render());
-
-/* =========================
-   Inicialización
-   ========================= */
-(function init(){
-  // Fecha hoy por defecto
-  $("date").valueAsDate = new Date();
-  startLive();
-})();
+// ===============================
+// 7) ARRANQUE INICIAL
+// ===============================
+setFechaHoy();
+cargarGastos();
