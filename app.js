@@ -275,5 +275,47 @@ btnRefresh.addEventListener("click", () => render());
   $("date").valueAsDate = new Date();
   startLive();
 })();
+function printLast() {
+  const tbody = document.querySelector("tbody");
+  if (!tbody) {
+    alert("No hay datos para imprimir");
+    return;
+  }
+
+  const filas = tbody.querySelectorAll("tr");
+  if (filas.length === 0) {
+    alert("No hay registros");
+    return;
+  }
+
+  // El último gasto es la PRIMERA fila (el más reciente)
+  const fila = filas[0];
+  const html = `
+    <html>
+      <head>
+        <title>Último gasto</title>
+        <style>
+          body { font-family: system-ui, Arial; padding: 24px; }
+          table { border-collapse: collapse; width: 100%; }
+          td, th { border: 1px solid #ccc; padding: 8px; }
+          th { background: #f3f3f3; }
+        </style>
+      </head>
+      <body>
+        <h2>Último gasto</h2>
+        <table>
+          ${fila.outerHTML}
+        </table>
+        <script>
+          window.onload = () => window.print();
+        </script>
+      </body>
+    </html>
+  `;
+
+  const w = window.open("", "_blank");
+  w.document.write(html);
+  w.document.close();
+}
 
 
