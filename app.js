@@ -264,7 +264,7 @@ tbody.addEventListener("click", async (ev) => {
 filterText.addEventListener("input", render);
 filterYear.addEventListener("change", render);
 
-btnPrint.addEventListener("click", () => window.print());
+btnPrint.addEventListener("click", printLast);
 btnRefresh.addEventListener("click", () => render());
 
 /* =========================
