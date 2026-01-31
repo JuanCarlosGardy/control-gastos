@@ -1,87 +1,139 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Control de Gastos - Empresa</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 
-    <title>Control de Gastos</title>
-
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-
-  <body>
-    <header class="app-header">
+<body>
+  <header class="container header">
+    <div>
       <h1>Control de Gastos</h1>
-      <p class="app-subtitle">Registro y control</p>
-    </header>
+      <p class="muted">Registro multiusuario con número correlativo e impresión.</p>
+    </div>
+    <div class="header-actions no-print">
+      <button id="btnPrint" type="button">Imprimir</button>
+      <button id="btnRefresh" type="button">Actualizar</button>
+    </div>
+  </header>
 
-    <main class="app-container">
-      <section class="card">
-        <h2>Nuevo gasto</h2>
+  <main class="container">
+    <section class="card no-print">
+      <h2>Nuevo gasto</h2>
 
-        <form id="gastoForm" autocomplete="off">
-          <div class="field">
-            <label for="fecha">Fecha</label>
-            <input id="fecha" type="date" required />
-          </div>
+      <form id="expenseForm" class="grid">
+        <div class="field">
+          <label for="date">Fecha</label>
+          <input id="date" name="date" type="date" required />
+        </div>
 
-          <div class="field">
-            <label for="concepto">Concepto</label>
-            <input
-              id="concepto"
-              type="text"
-              placeholder="Ej.: Proveedor, combustible, material..."
-              required
-            />
-          </div>
+        <div class="field">
+          <label for="concept">Concepto</label>
+          <input id="concept" name="concept" type="text" placeholder="Ej: Material obra / Gasolina / Herramientas" required />
+        </div>
 
-          <div class="field">
-            <label for="categoria">Categoría</label>
-            <select id="categoria" required>
-              <option value="" disabled selected>Selecciona</option>
-              <option value="Suministros">Suministros</option>
-              <option value="Compras">Compras</option>
-              <option value="Personal">Personal</option>
-              <option value="Servicios">Servicios</option>
-              <option value="Impuestos">Impuestos</option>
-              <option value="Otros">Otros</option>
-            </select>
-          </div>
+        <div class="field">
+          <label for="supplier">Proveedor</label>
+          <input id="supplier" name="supplier" type="text" placeholder="Ej: Ferretería, almacén, proveedor" />
+        </div>
 
-          <div class="field">
-            <label for="importe">Importe (€)</label>
-            <input
-              id="importe"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0,00"
-              required
-            />
-          </div>
+        <div class="field">
+          <label for="category">Categoría</label>
+          <select id="category" name="category" required>
+            <option value="">Selecciona…</option>
+            <option>Material</option>
+            <option>Mano de obra</option>
+            <option>Transporte</option>
+            <option>Herramientas</option>
+            <option>Subcontrata</option>
+            <option>Gestoría / Administración</option>
+            <option>Otros</option>
+          </select>
+        </div>
 
-          <div class="actions">
-            <button type="submit">Guardar gasto</button>
-            <button type="button" id="btnImprimirUltimo">
-              Imprimir último
-            </button>
-          </div>
-        </form>
-      </section>
+        <div class="field">
+          <label for="amount">Importe (€)</label>
+          <input id="amount" name="amount" type="number" step="0.01" min="0" required />
+        </div>
 
-      <section class="card">
-        <h2>Gastos</h2>
-        <div id="listaGastos"></div>
-      </section>
-    </main>
+        <div class="field">
+          <label for="vat">IVA (%)</label>
+          <input id="vat" name="vat" type="number" step="0.01" min="0" value="0" />
+        </div>
 
-    <footer class="app-footer">
-      <small>Control de Gastos · Publicado en GitHub Pages</small>
-    </footer>
+        <div class="field">
+          <label for="payment">Pago</label>
+          <select id="payment" name="payment" required>
+            <option value="">Selecciona…</option>
+            <option>Tarjeta</option>
+            <option>Transferencia</option>
+            <option>Efectivo</option>
+            <option>Financiado</option>
+            <option>Otro</option>
+          </select>
+        </div>
 
-    <!-- MUY IMPORTANTE: app.js como módulo -->
-    <script type="module" src="app.js"></script>
-  </body>
+        <div class="field full">
+          <label for="notes">Notas</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="Detalle, referencia factura, obra asociada, etc."></textarea>
+        </div>
+
+        <div class="actions full">
+          <button id="btnSave" type="submit">Guardar gasto</button>
+          <span id="status" class="muted"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="list-head">
+        <h2>Listado</h2>
+        <div class="filters no-print">
+          <input id="filterText" type="text" placeholder="Filtrar por concepto/proveedor/categoría..." />
+          <select id="filterYear"></select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="table">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Fecha</th>
+              <th>Concepto</th>
+              <th>Proveedor</th>
+              <th>Categoría</th>
+              <th class="right">Base (€)</th>
+              <th class="right">IVA (€)</th>
+              <th class="right">Total (€)</th>
+              <th>Pago</th>
+              <th class="no-print">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" class="right"><strong>Totales</strong></td>
+              <td class="right" id="sumBase">0,00</td>
+              <td class="right" id="sumVat">0,00</td>
+              <td class="right" id="sumTotal">0,00</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p class="muted print-note">
+        Nota: En impresión se ocultan botones y se muestra solo el listado.
+      </p>
+    </section>
+  </main>
+
+  <!-- App -->
+  <script type="module" src="app.js"></script>
+</body>
 </html>
 
 
