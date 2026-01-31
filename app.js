@@ -311,4 +311,3 @@ btnRefresh.addEventListener("click", () => render());
   $("date").valueAsDate = new Date();
   startLive();
 })();
-
