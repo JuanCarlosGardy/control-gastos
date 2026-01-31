@@ -129,4 +129,19 @@ tfoot td{ border-bottom:none; }
   .table-wrap{ border:0; }
   th{ position:static; }
   table{ min-width:auto; }
+    .empresa{
+    text-align: center;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: .5px;
+    margin-top: 4px;
+  }
+
+  .empresa-sub{
+    text-align: center;
+    font-size: 11px;
+    margin-bottom: 6px;
+    opacity: .85;
+  }
+
 }
