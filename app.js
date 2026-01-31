@@ -10,16 +10,13 @@ import {
   query, orderBy, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-/* =========================
-   PASO A: PEGA AQUÍ TU CONFIG DE FIREBASE
-   ========================= */
 const firebaseConfig = {
-  apiKey: "PON_TU_API_KEY",
-  authDomain: "PON_TU_AUTH_DOMAIN",
-  projectId: "PON_TU_PROJECT_ID",
-  storageBucket: "PON_TU_STORAGE_BUCKET",
-  messagingSenderId: "PON_TU_SENDER_ID",
-  appId: "PON_TU_APP_ID"
+  apiKey: "AIzaSyD22iGuezGjFOyV3EvXVFXYWxN4GM7Fk1Q",
+  authDomain: "gastos-obrantis.firebaseapp.com",
+  projectId: "gastos-obrantis",
+  storageBucket: "gastos-obrantis.firebasestorage.app",
+  messagingSenderId: "634229985957",
+  appId: "1:634229985957:web:3457c773c98d775207734c"
 };
 
 const app = initializeApp(firebaseConfig);
