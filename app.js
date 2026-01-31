@@ -345,8 +345,11 @@ function printLast() {
       </style>
     </head>
     <body>
-      <div class="h1">CONTROL DE GASTOS</div>
-      <div class="sub">Ticket / ficha del último registro</div>
+      <div class="empresa">OBRANTIS, S.L.</div>
+<div class="empresa-sub">Control interno de gastos</div>
+<div class="h1">CONTROL DE GASTOS</div>
+<div class="sub">Ticket / ficha del último registro</div>
+
       <div class="hr"></div>
 
       <div class="row"><div class="k">Nº</div><div class="v">${n || "-"}</div></div>
