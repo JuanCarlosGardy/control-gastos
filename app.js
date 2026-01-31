@@ -267,7 +267,7 @@ tbody.addEventListener("click", async (ev) => {
 filterText.addEventListener("input", render);
 filterYear.addEventListener("change", render);
 
-btnPrint.addEventListener("click", () => printLast());
+btnPrint.addEventListener("click", () => window.print());
 btnRefresh.addEventListener("click", () => render());
 
 /* =========================
@@ -277,51 +277,5 @@ btnRefresh.addEventListener("click", () => render());
   // Fecha hoy por defecto
   $("date").valueAsDate = new Date();
   startLive();
-  function imprimirSoloUltimo(gastosArray) {
-  if (!Array.isArray(gastosArray) || gastosArray.length === 0) {
-    alert("No hay registros para imprimir.");
-    return;
-  }
-
-  // Asumimos que el listado está ordenado (último = el más reciente).
-  // Si tu array está al revés, luego te indico el cambio.
-  const ultimo = gastosArray[0]; // o gastosArray[gastosArray.length - 1]
-
-  const w = window.open("", "_blank");
-  w.document.write(`
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Impresión - Último gasto</title>
-        <style>
-          body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; }
-          h2 { margin: 0 0 12px; }
-          .box { border: 1px solid #ccc; border-radius: 8px; padding: 16px; }
-          .row { margin: 6px 0; }
-          .k { font-weight: 700; display: inline-block; width: 120px; }
-        </style>
-      </head>
-      <body>
-        <h2>Último gasto</h2>
-        <div class="box">
-          <div class="row"><span class="k">Fecha:</span> ${ultimo.fecha ?? ""}</div>
-          <div class="row"><span class="k">Concepto:</span> ${ultimo.concepto ?? ""}</div>
-          <div class="row"><span class="k">Proveedor:</span> ${ultimo.proveedor ?? ""}</div>
-          <div class="row"><span class="k">Categoría:</span> ${ultimo.categoria ?? ""}</div>
-          <div class="row"><span class="k">Base (€):</span> ${ultimo.base ?? ultimo.importeBase ?? ""}</div>
-          <div class="row"><span class="k">IVA (€):</span> ${ultimo.ivaEuros ?? ultimo.iva ?? ""}</div>
-          <div class="row"><span class="k">Total (€):</span> ${ultimo.total ?? ultimo.importe ?? ""}</div>
-          <div class="row"><span class="k">Pago:</span> ${ultimo.pago ?? ""}</div>
-          <div class="row"><span class="k">Notas:</span> ${ultimo.notas ?? ""}</div>
-        </div>
-        <script>
-          window.onload = () => window.print();
-        </script>
-      </body>
-    </html>
-  `);
-  w.document.close();
-}
-
 })();
 
