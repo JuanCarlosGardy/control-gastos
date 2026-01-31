@@ -1,3 +1,4 @@
+console.log("app.js cargado OK");
 // app.js (ESM)
 // 1) Conecta Firebase
 // 2) Guarda gastos en Firestore
@@ -310,3 +311,4 @@ btnRefresh.addEventListener("click", () => render());
   $("date").valueAsDate = new Date();
   startLive();
 })();
+
