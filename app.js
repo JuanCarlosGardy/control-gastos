@@ -282,40 +282,108 @@ function printLast() {
     return;
   }
 
-  const filas = tbody.querySelectorAll("tr");
+  const filas = [...tbody.querySelectorAll("tr")];
   if (filas.length === 0) {
     alert("No hay registros");
     return;
   }
 
-  // El último gasto es la PRIMERA fila (el más reciente)
+  // El último gasto (más reciente) suele estar arriba:
   const fila = filas[0];
+
+  // Leemos celdas (según tu tabla: Nº, Fecha, Concepto, Proveedor, Categoría, Base, IVA, Total, Pago)
+  const celdas = [...fila.querySelectorAll("td")].map(td => td.textContent.trim());
+  const [n, fecha, concepto, proveedor, categoria, base, iva, total, pago] = celdas;
+
+  const ahora = new Date();
+  const impFecha = ahora.toLocaleDateString("es-ES");
+  const impHora = ahora.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+
   const html = `
-    <html>
-      <head>
-        <title>Último gasto</title>
-        <style>
-          body { font-family: system-ui, Arial; padding: 24px; }
-          table { border-collapse: collapse; width: 100%; }
-          td, th { border: 1px solid #ccc; padding: 8px; }
-          th { background: #f3f3f3; }
-        </style>
-      </head>
-      <body>
-        <h2>Último gasto</h2>
-        <table>
-          ${fila.outerHTML}
-        </table>
-        <script>
-          window.onload = () => window.print();
-        </script>
-      </body>
-    </html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <title>Último gasto</title>
+      <style>
+        @media print {
+          body { margin: 0; }
+        }
+        body{
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+          padding: 12px;
+          width: 74mm;           /* ancho típico ticket (58/80mm). Cambia a 58mm si quieres más estrecho */
+          max-width: 74mm;
+        }
+        .h1{
+          font-weight: 800;
+          font-size: 14px;
+          text-align: center;
+          letter-spacing: .5px;
+          margin: 6px 0 2px;
+        }
+        .sub{
+          text-align: center;
+          font-size: 11px;
+          margin: 0 0 10px;
+          opacity: .85;
+        }
+        .hr{ border-top: 1px dashed #000; margin: 8px 0; }
+        .row{ display: flex; justify-content: space-between; gap: 10px; margin: 4px 0; }
+        .k{ font-weight: 700; }
+        .v{ text-align: right; white-space: nowrap; }
+        .wrap{ white-space: normal; text-align: left; }
+        .big{
+          font-size: 13px;
+          font-weight: 900;
+        }
+        .foot{
+          margin-top: 10px;
+          font-size: 10px;
+          text-align: center;
+          opacity: .85;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="h1">CONTROL DE GASTOS</div>
+      <div class="sub">Ticket / ficha del último registro</div>
+      <div class="hr"></div>
+
+      <div class="row"><div class="k">Nº</div><div class="v">${n || "-"}</div></div>
+      <div class="row"><div class="k">Fecha</div><div class="v">${fecha || "-"}</div></div>
+
+      <div class="hr"></div>
+
+      <div class="row"><div class="k">Concepto</div><div class="v"></div></div>
+      <div class="wrap">${concepto || "-"}</div>
+
+      <div class="row"><div class="k">Proveedor</div><div class="v"></div></div>
+      <div class="wrap">${proveedor || "-"}</div>
+
+      <div class="row"><div class="k">Categoría</div><div class="v"></div></div>
+      <div class="wrap">${categoria || "-"}</div>
+
+      <div class="hr"></div>
+
+      <div class="row"><div class="k">Base</div><div class="v">${base || "-"}</div></div>
+      <div class="row"><div class="k">IVA</div><div class="v">${iva || "-"}</div></div>
+      <div class="row big"><div class="k">TOTAL</div><div class="v">${total || "-"}</div></div>
+
+      <div class="row"><div class="k">Pago</div><div class="v">${pago || "-"}</div></div>
+
+      <div class="hr"></div>
+
+      <div class="foot">Impreso: ${impFecha} ${impHora}</div>
+
+      <script>
+        window.onload = () => window.print();
+      </script>
+    </body>
+  </html>
   `;
 
   const w = window.open("", "_blank");
   w.document.write(html);
   w.document.close();
 }
-
 
