@@ -1,4 +1,3 @@
-console.log("app.js cargado OK");
 // app.js (ESM)
 // 1) Conecta Firebase
 // 2) Guarda gastos en Firestore
