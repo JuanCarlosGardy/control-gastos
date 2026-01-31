@@ -42,6 +42,7 @@ const statusEl = $("status");
 const tbody = $("tbody");
 const btnPrint = $("btnPrint");
 const btnRefresh = $("btnRefresh");
+const btnPrintLast = $("btnPrintLast");
 const filterText = $("filterText");
 const filterYear = $("filterYear");
 
@@ -103,6 +104,29 @@ let allExpenses = []; // array de {id, ...data}
    Render tabla + totales
    ========================= */
 function render(){
+function printLastExpense() {
+  if (!allExpenses || allExpenses.length === 0) {
+    setStatus("No hay gastos para imprimir.", true);
+    return;
+  }
+
+  // Como el listado ya viene ordenado por date desc + createdAt desc,
+  // el primero es el "último" registrado
+  const last = allExpenses[0];
+
+  // Ocultar todas las filas excepto la del último número
+  const rows = document.querySelectorAll("#tbody tr");
+  rows.forEach(tr => {
+    const text = tr.innerText || "";
+    tr.style.display = text.includes(last.number) ? "" : "none";
+  });
+
+  // Imprimir
+  window.print();
+
+  // Restaurar filas tras imprimir
+  rows.forEach(tr => tr.style.display = "");
+}
   const txt = (filterText.value || "").trim().toLowerCase();
   const yr = filterYear.value;
 
@@ -275,6 +299,7 @@ filterText.addEventListener("input", render);
 filterYear.addEventListener("change", render);
 
 btnPrint.addEventListener("click", () => window.print());
+btnPrintLast.addEventListener("click", printLastExpense);
 btnRefresh.addEventListener("click", () => render());
 
 /* =========================
