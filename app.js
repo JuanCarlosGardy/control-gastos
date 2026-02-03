@@ -322,12 +322,13 @@ btnPrintAll?.addEventListener("click", () => {
 // =========================
 // INIT
 // =========================
+/* =========================
+   Inicialización
+   ========================= */
 (function init(){
   $("date").valueAsDate = new Date();
-  // Importante: arrancamos live igualmente por ahora.
-  // Cuando cierres reglas, si no hay login, dará error -> y lo verás.
+  setStatus("Inicia sesión para cargar los datos.");
 })();
-
 // =========================
 // TU FUNCIÓN EXISTENTE (NO LA TOCO)
 // =========================
