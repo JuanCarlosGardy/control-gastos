@@ -34,62 +34,67 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// =========================
+// AUTH + AUTORIZACIÓN
+// =========================
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// =========================
-// UI Helpers
-// =========================
-const $ = (id) => document.getElementById(id);
+// Lista blanca de emails autorizados
+const ALLOWED_EMAILS = new Set([
+  "restaurantebarquilla@gmail.com",
+  "lamagiadegardy@gmail.com",
+  "juancarlosgardy6@gmail.com"
+]);
 
-// DOM
-const form = $("expenseForm");
-const statusEl = $("status");
-const tbody = $("tbody");
-
-const btnPrint = $("btnPrint");
-const btnRefresh = $("btnRefresh");
-const btnPrintAll = $("btnPrintAll");
-
-const btnLogin  = $("btnLogin");
-const btnLogout = $("btnLogout");
-const userBadge = $("userBadge");
-
-const filterText = $("filterText");
-const filterYear = $("filterYear");
-
-const sumBase = $("sumBase");
-const sumVat = $("sumVat");
-const sumTotal = $("sumTotal");
-
-console.log("[DOM] btnLogin:", !!btnLogin, "btnLogout:", !!btnLogout, "userBadge:", !!userBadge);
-
-// =========================
-// AUTH UI + LISTENERS
-// =========================
-function setAuthUI(user) {
-  if (user) {
-    btnLogin.style.display = "none";
-    btnLogout.style.display = "inline-flex";
-    userBadge.textContent = user.email || user.displayName || "Usuario";
-  } else {
-    btnLogin.style.display = "inline-flex";
-    btnLogout.style.display = "none";
-    userBadge.textContent = "Invitado";
-  }
-}
+let liveStarted = false;
 
 // Login
 btnLogin.addEventListener("click", async () => {
-  console.log("[AUTH] CLICK LOGIN DETECTADO");
+  console.log("[AUTH] CLICK LOGIN");
   try {
     await signInWithPopup(auth, provider);
-    console.log("[AUTH] login OK");
   } catch (err) {
-    console.error("[AUTH] ERROR LOGIN:", err);
-    alert("Error al iniciar sesión. Mira la consola (F12 → Console).");
+    console.error("[AUTH] error login:", err);
+    alert("Error al iniciar sesión. Mira la consola.");
   }
 });
+
+// Logout
+btnLogout.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    liveStarted = false;
+    setStatus("Sesión cerrada.");
+  } catch (err) {
+    console.error("[AUTH] error logout:", err);
+  }
+});
+
+// Estado de autenticación
+onAuthStateChanged(auth, (user) => {
+  console.log("[AUTH] estado:", user ? user.email : "NO logueado");
+  setAuthUI(user);
+
+  if (!user) {
+    setStatus("Inicia sesión para acceder a los datos.", true);
+    return;
+  }
+
+  const email = (user.email || "").toLowerCase();
+
+  if (!ALLOWED_EMAILS.has(email)) {
+    setStatus(`Usuario no autorizado: ${email}`, true);
+    return;
+  }
+
+  setStatus("Usuario autorizado. Cargando datos...");
+  if (!liveStarted) {
+    liveStarted = true;
+    startLive();
+  }
+});
+
 
 // Logout
 btnLogout.addEventListener("click", async () => {
