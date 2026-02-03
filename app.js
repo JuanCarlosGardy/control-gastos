@@ -80,35 +80,9 @@ const ALLOWED_EMAILS = new Set([
 
 let liveStarted = false;
 
-// Login
-btnLogin.addEventListener("click", async () => {
-  console.log("[AUTH] CLICK LOGIN");
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (err) {
-    console.error("[AUTH] error login:", err);
-    alert("Error al iniciar sesión. Mira la consola.");
-  }
-});
-
-// Logout
-btnLogout.addEventListener("click", async () => {
-  try {
-    await signOut(auth);
-    liveStarted = false;
-    setStatus("Sesión cerrada.");
-  } catch (err) {
-    console.error("[AUTH] error logout:", err);
-  }
-});
-
-// Estado de autenticación
-onAuthStateChanged(auth, (user) => {
-  console.log("[AUTH] estado:", user ? user.email : "NO logueado");
-  function setAuthUI(user) {
+function setAuthUI(user) {
   const logged = !!user;
 
-  // Botones login/logout + badge
   btnLogin.style.display = logged ? "none" : "inline-flex";
   btnLogout.style.display = logged ? "inline-flex" : "none";
   userBadge.textContent = logged ? (user.email || "Usuario") : "Invitado";
@@ -120,12 +94,10 @@ onAuthStateChanged(auth, (user) => {
     el.disabled = !logged;
   });
 
-  // Botones de arriba (si quieres bloquearlos también)
   btnPrint.disabled = !logged;
   btnPrintAll.disabled = !logged;
   btnRefresh.disabled = !logged;
 
-  // Limpiar listado visual si NO hay login
   if (!logged) {
     tbody.innerHTML = "";
     sumBase.textContent = "0,00";
@@ -134,16 +106,50 @@ onAuthStateChanged(auth, (user) => {
   }
 }
 
+// Login
+btnLogin.addEventListener("click", async () => {
+  console.log("[AUTH] click login");
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error("[AUTH] error login:", err);
+    alert("Error al iniciar sesión. Mira la consola.");
+  }
+});
 
 // Logout
 btnLogout.addEventListener("click", async () => {
   console.log("[AUTH] click logout");
   try {
     await signOut(auth);
-    console.log("[AUTH] logout OK");
+    liveStarted = false;
+    setStatus("Sesión cerrada.");
   } catch (err) {
     console.error("[AUTH] error logout:", err);
-    alert("Error al cerrar sesión. Mira la consola (F12 → Console).");
+    alert("Error al cerrar sesión. Mira la consola.");
+  }
+});
+
+// Estado de autenticación
+onAuthStateChanged(auth, (user) => {
+  console.log("[AUTH] estado:", user ? user.email : "NO logueado");
+  setAuthUI(user);
+
+  if (!user) {
+    setStatus("Inicia sesión para acceder a los datos.", true);
+    return;
+  }
+
+  const email = (user.email || "").toLowerCase();
+  if (!ALLOWED_EMAILS.has(email)) {
+    setStatus(`Usuario no autorizado: ${email}`, true);
+    return;
+  }
+
+  setStatus("Usuario autorizado. Cargando datos...");
+  if (!liveStarted) {
+    liveStarted = true;
+    startLive();
   }
 });
 
