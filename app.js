@@ -18,6 +18,14 @@ import {
   getFirestore, collection, addDoc, doc, runTransaction,
   query, orderBy, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyD22iGuezGjFOyV3EvXVFXYWxN4GM7Fk1Q",
