@@ -135,6 +135,8 @@ btnLogout.addEventListener("click", async () => {
 onAuthStateChanged(auth, (user) => {
   console.log("[AUTH] estado:", user ? user.email : "NO logueado");
   setAuthUI(user);
+currentEmail = user?.email ? user.email.toLowerCase() : null;
+console.log("[AUTH] currentEmail:", currentEmail);
 
   if (!user) {
     setStatus("Inicia sesión para acceder a los datos.", true);
