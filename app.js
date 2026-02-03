@@ -140,29 +140,47 @@ btnLogout.addEventListener("click", async () => {
 // Estado de autenticación
 onAuthStateChanged(auth, (user) => {
   console.log("[AUTH] estado:", user ? user.email : "NO logueado");
-  setAuthUI(user);
-currentEmail = user?.email ? user.email.toLowerCase() : null;
-console.log("[AUTH] currentEmail:", currentEmail);
 
+  // Caso 1: no hay login -> UI invitado (bloqueada)
   if (!user) {
+    currentEmail = null;
+    CURRENT_ROLE = ROLES.NONE;
+    setAuthUI(null);
     setStatus("Inicia sesión para acceder a los datos.", true);
     return;
   }
 
-  const email = (user.email || "").toLowerCase();
+  const email = (user?.email || "").toLowerCase().trim();
+  currentEmail = email;
+  console.log("[AUTH] currentEmail:", currentEmail);
+
+  // Caso 2: login pero NO autorizado -> forzamos UI invitado (bloqueada)
   if (!ALLOWED_EMAILS.has(email)) {
+    CURRENT_ROLE = ROLES.NONE;
+    setAuthUI(null);
     setStatus(`Usuario no autorizado: ${email}`, true);
     return;
   }
-const email = (user?.email || "").toLowerCase().trim();
 
-CURRENT_ROLE = getUserRole(email, {
-  adminEmail: ADMIN_EMAIL,
-  allowedEmails: Array.from(ALLOWED_EMAILS),
-  // Opcional (déjalo tal cual por ahora):
-  editorsEmails: [],
-  viewersEmails: [],
+  // Caso 3: autorizado -> UI logueada
+  setAuthUI(user);
+
+  CURRENT_ROLE = getUserRole(email, {
+    adminEmail: ADMIN_EMAIL,
+    allowedEmails: Array.from(ALLOWED_EMAILS),
+    editorsEmails: [],
+    viewersEmails: [],
+  });
+
+  console.log("[AUTH] email:", email, "role:", CURRENT_ROLE);
+
+  setStatus("Usuario autorizado. Cargando datos...");
+  if (!liveStarted) {
+    liveStarted = true;
+    startLive();
+  }
 });
+
 
 // Dejamos trazabilidad sin tocar la UI todavía
 console.log("[AUTH] email:", email, "role:", CURRENT_ROLE);
