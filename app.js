@@ -33,6 +33,37 @@ const firebaseConfig = {
 // 3) INIT APP + DB + AUTH
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+/* =========================
+   UI Helpers
+   ========================= */
+const $ = (id) => document.getElementById(id);
+
+const form = $("expenseForm");
+const statusEl = $("status");
+const tbody = $("tbody");
+
+const btnPrint = $("btnPrint");
+const btnPrintAll = $("btnPrintAll");
+const btnRefresh = $("btnRefresh");
+
+const btnLogin = $("btnLogin");
+const btnLogout = $("btnLogout");
+const userBadge = $("userBadge");
+
+const filterText = $("filterText");
+const filterYear = $("filterYear");
+
+const sumBase = $("sumBase");
+const sumVat = $("sumVat");
+const sumTotal = $("sumTotal");
+
+console.log("[DOM]", {
+  form: !!form,
+  btnLogin: !!btnLogin,
+  btnLogout: !!btnLogout,
+  userBadge: !!userBadge
+});
+
 
 // =========================
 // AUTH + AUTORIZACIÓN
