@@ -144,4 +144,23 @@ tfoot td{ border-bottom:none; }
     opacity: .85;
   }
 
+@media print {
+  /* Ocultar todo por defecto */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Mostrar solo el listado */
+  body.print-listado #listado,
+  body.print-listado #listado * {
+    visibility: visible;
+  }
+
+  body.print-listado #listado {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
 }
+
