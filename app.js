@@ -74,10 +74,10 @@ const provider = new GoogleAuthProvider();
 // Lista blanca de emails autorizados
 const ALLOWED_EMAILS = new Set([
   "restaurantebarquilla@gmail.com",
-  "lamagiadegardy@gmail.com",
+  "rarbadea@gmail.com",
   "juancarlosgardy6@gmail.com"
 ]);
-
+const ADMIN_EMAIL = "juancarlosgardy6@gmail.com";
 let liveStarted = false;
 
 function setAuthUI(user) {
