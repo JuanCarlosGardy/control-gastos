@@ -1,3 +1,11 @@
+// 🔐 Auth
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  onAuthStateChanged, 
+  signOut 
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 // app.js (ESM)
 // 1) Conecta Firebase
 // 2) Guarda gastos en Firestore
