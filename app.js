@@ -4,6 +4,7 @@
 
 // 1) IMPORTS (SOLO AQUÍ, SOLO UNA VEZ)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getUserRole, can, ACTIONS, ROLES } from "./permissions.js";
 
 import {
   getFirestore, collection, addDoc, doc, runTransaction,
@@ -73,6 +74,7 @@ const provider = new GoogleAuthProvider();
 
 // Lista blanca de emails autorizados
 const ALLOWED_EMAILS = new Set([
+  let CURRENT_ROLE = ROLES.NONE;
   "restaurantebarquilla@gmail.com",
   "rarbadea@gmail.com",
   "juancarlosgardy6@gmail.com"
@@ -148,6 +150,18 @@ console.log("[AUTH] currentEmail:", currentEmail);
     setStatus(`Usuario no autorizado: ${email}`, true);
     return;
   }
+const email = (user?.email || "").toLowerCase().trim();
+
+CURRENT_ROLE = getUserRole(email, {
+  adminEmail: ADMIN_EMAIL,
+  allowedEmails: ALLOWED_EMAILS,
+  // Opcional (déjalo tal cual por ahora):
+  editorsEmails: [],
+  viewersEmails: [],
+});
+
+// Dejamos trazabilidad sin tocar la UI todavía
+console.log("[AUTH] email:", email, "role:", CURRENT_ROLE);
 
   setStatus("Usuario autorizado. Cargando datos...");
   if (!liveStarted) {
