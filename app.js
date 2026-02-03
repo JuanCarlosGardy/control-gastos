@@ -158,7 +158,7 @@ const email = (user?.email || "").toLowerCase().trim();
 
 CURRENT_ROLE = getUserRole(email, {
   adminEmail: ADMIN_EMAIL,
-  allowedEmails: ALLOWED_EMAILS,
+  allowedEmails: Array.from(ALLOWED_EMAILS),
   // Opcional (déjalo tal cual por ahora):
   editorsEmails: [],
   viewersEmails: [],
