@@ -79,6 +79,7 @@ const ALLOWED_EMAILS = new Set([
 ]);
 const ADMIN_EMAIL = "juancarlosgardy6@gmail.com";
 let liveStarted = false;
+let currentEmail = null;
 
 function setAuthUI(user) {
   const logged = !!user;
