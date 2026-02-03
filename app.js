@@ -1,32 +1,26 @@
-console.log("[BOOT] app.js cargado OK");
-// 🔐 Auth
-import { 
-  getAuth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signOut 
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-// app.js (ESM)
-// 1) Conecta Firebase
-// 2) Guarda gastos en Firestore
-// 3) Genera correlativo seguro por año: GAS-YYYY-0001
-// 4) Lista, filtra, elimina, imprime
+// ================================
+// app.js (ESM) - Control de Gastos
+// ================================
 
+// 1) IMPORTS (SOLO AQUÍ, SOLO UNA VEZ)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+
 import {
   getFirestore, collection, addDoc, doc, runTransaction,
   query, orderBy, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
 import {
   getAuth,
-  onAuthStateChanged,
-  GoogleAuthProvider,
   signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
+console.log("[BOOT] app.js cargado OK");
 
+// 2) FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyD22iGuezGjFOyV3EvXVFXYWxN4GM7Fk1Q",
   authDomain: "gastos-obrantis.firebaseapp.com",
@@ -36,54 +30,48 @@ const firebaseConfig = {
   appId: "1:634229985957:web:3457c773c98d775207734c"
 };
 
+// 3) INIT APP + DB + AUTH
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-/* =========================
-   UI Helpers
-   ========================= */
-const $ = (id) => document.getElementById(id);
-
-const form = $("expenseForm");
-const statusEl = $("status");
-const tbody = $("tbody");
-const btnPrint = $("btnPrint");
-const btnRefresh = $("btnRefresh");
-const filterText = $("filterText");
-const filterYear = $("filterYear");
-
-const sumBase = $("sumBase");
-/* ============================
-   AUTH - Google Login
-============================ */
-
-import {
-  getAuth,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// Botones AUTH (deben existir en el HTML)
+// =========================
+// UI Helpers
+// =========================
+const $ = (id) => document.getElementById(id);
+
+// DOM
+const form = $("expenseForm");
+const statusEl = $("status");
+const tbody = $("tbody");
+
+const btnPrint = $("btnPrint");
+const btnRefresh = $("btnRefresh");
+const btnPrintAll = $("btnPrintAll");
+
 const btnLogin  = $("btnLogin");
 const btnLogout = $("btnLogout");
 const userBadge = $("userBadge");
 
-console.log("[AUTH] botones:", {
-  btnLogin: !!btnLogin,
-  btnLogout: !!btnLogout,
-  userBadge: !!userBadge
-});
+const filterText = $("filterText");
+const filterYear = $("filterYear");
 
+const sumBase = $("sumBase");
+const sumVat = $("sumVat");
+const sumTotal = $("sumTotal");
+
+console.log("[DOM] btnLogin:", !!btnLogin, "btnLogout:", !!btnLogout, "userBadge:", !!userBadge);
+
+// =========================
+// AUTH UI + LISTENERS
+// =========================
 function setAuthUI(user) {
   if (user) {
     btnLogin.style.display = "none";
     btnLogout.style.display = "inline-flex";
-    userBadge.textContent = user.email;
+    userBadge.textContent = user.email || user.displayName || "Usuario";
   } else {
     btnLogin.style.display = "inline-flex";
     btnLogout.style.display = "none";
@@ -91,22 +79,19 @@ function setAuthUI(user) {
   }
 }
 
-onAuthStateChanged(auth, (user) => {
-  console.log("[AUTH] estado:", user ? user.email : "NO logueado");
-  setAuthUI(user);
-});
-
+// Login
 btnLogin.addEventListener("click", async () => {
-  console.log("[AUTH] click login");
+  console.log("[AUTH] CLICK LOGIN DETECTADO");
   try {
     await signInWithPopup(auth, provider);
     console.log("[AUTH] login OK");
   } catch (err) {
-    console.error("[AUTH] error login:", err);
-    alert("Error al iniciar sesión. Mira la consola.");
+    console.error("[AUTH] ERROR LOGIN:", err);
+    alert("Error al iniciar sesión. Mira la consola (F12 → Console).");
   }
 });
 
+// Logout
 btnLogout.addEventListener("click", async () => {
   console.log("[AUTH] click logout");
   try {
@@ -114,19 +99,18 @@ btnLogout.addEventListener("click", async () => {
     console.log("[AUTH] logout OK");
   } catch (err) {
     console.error("[AUTH] error logout:", err);
-    alert("Error al cerrar sesión.");
+    alert("Error al cerrar sesión. Mira la consola (F12 → Console).");
   }
 });
 
-const sumVat = $("sumVat");
-const sumTotal = $("sumTotal");
-
+// =========================
+// Helpers
+// =========================
 function euro(n){
   return (Number(n) || 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function yearFromDate(isoDate){
-  // isoDate "YYYY-MM-DD"
   return Number(String(isoDate).slice(0,4));
 }
 
@@ -139,20 +123,27 @@ function setStatus(msg, isError=false){
   statusEl.style.color = isError ? "#ffb4b4" : "";
 }
 
-/* =========================
-   Correlativo seguro (transacción)
-   Doc contador: counters/gastos_YYYY
-   Campo: value (number)
-   ========================= */
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+// =========================
+// Correlativo seguro (transacción)
+// Doc contador: counters/gastos_YYYY
+// Campo: value (number)
+// =========================
 async function nextExpenseNumber(year){
   const counterRef = doc(db, "counters", `gastos_${year}`);
 
   const next = await runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef);
     let current = 0;
-    if (snap.exists()) {
-      current = Number(snap.data().value || 0);
-    }
+    if (snap.exists()) current = Number(snap.data().value || 0);
     const updated = current + 1;
     tx.set(counterRef, { value: updated }, { merge: true });
     return updated;
@@ -161,19 +152,23 @@ async function nextExpenseNumber(year){
   return `GAS-${year}-${pad4(next)}`;
 }
 
-/* =========================
-   Firestore: colección de gastos
-   ========================= */
+// =========================
+// Firestore: colección gastos
+// =========================
 const expensesCol = collection(db, "expenses");
 
-/* =========================
-   Estado local (para filtros)
-   ========================= */
-let allExpenses = []; // array de {id, ...data}
+// Estado local
+let allExpenses = [];
+let unsubLive = null; // para cortar snapshot si hace falta
 
-/* =========================
-   Render tabla + totales
-   ========================= */
+function refreshYearOptions(){
+  const years = Array.from(new Set(allExpenses.map(e => e.year))).sort((a,b)=>b-a);
+  const current = filterYear.value;
+
+  filterYear.innerHTML = `<option value="">Todos los años</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
+  if (current && years.includes(Number(current))) filterYear.value = current;
+}
+
 function render(){
   const txt = (filterText.value || "").trim().toLowerCase();
   const yr = filterYear.value;
@@ -186,9 +181,7 @@ function render(){
       (e.category || "").toLowerCase().includes(txt) ||
       (e.number || "").toLowerCase().includes(txt);
 
-    const matchesYear =
-      !yr || String(e.year) === String(yr);
-
+    const matchesYear = !yr || String(e.year) === String(yr);
     return matchesText && matchesYear;
   });
 
@@ -202,9 +195,7 @@ function render(){
     const vat = base * (vatPct/100);
     const total = base + vat;
 
-    sBase += base;
-    sVat += vat;
-    sTot += total;
+    sBase += base; sVat += vat; sTot += total;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -229,35 +220,11 @@ function render(){
   sumTotal.textContent = euro(sTot);
 }
 
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-/* =========================
-   Cargar años en el filtro
-   ========================= */
-function refreshYearOptions(){
-  const years = Array.from(new Set(allExpenses.map(e => e.year))).sort((a,b)=>b-a);
-  const current = filterYear.value;
-
-  filterYear.innerHTML = `<option value="">Todos los años</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
-
-  // Mantener selección si existía
-  if (current && years.includes(Number(current))) filterYear.value = current;
-}
-
-/* =========================
-   Suscripción en tiempo real
-   ========================= */
 function startLive(){
+  if (unsubLive) unsubLive(); // por si ya estaba suscrito
   const q = query(expensesCol, orderBy("date", "desc"), orderBy("createdAt", "desc"));
 
-  onSnapshot(q, (snap) => {
+  unsubLive = onSnapshot(q, (snap) => {
     allExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     refreshYearOptions();
     render();
@@ -268,9 +235,9 @@ function startLive(){
   });
 }
 
-/* =========================
-   Guardar gasto
-   ========================= */
+// =========================
+// Guardar gasto
+// =========================
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   setStatus("Guardando...");
@@ -294,23 +261,13 @@ form.addEventListener("submit", async (ev) => {
     const number = await nextExpenseNumber(year);
 
     await addDoc(expensesCol, {
-      number,
-      year,
-      date,
-      concept,
-      supplier,
-      category,
-      amount,
-      vatPct,
-      payment,
-      notes,
+      number, year, date, concept, supplier, category,
+      amount, vatPct, payment, notes,
       createdAt: Date.now()
     });
 
     form.reset();
-    // Sugerencia: dejar fecha de hoy tras reset
     $("date").valueAsDate = new Date();
-
     setStatus(`Guardado: ${number}`);
   }catch(err){
     console.error(err);
@@ -318,9 +275,9 @@ form.addEventListener("submit", async (ev) => {
   }
 });
 
-/* =========================
-   Eliminar
-   ========================= */
+// =========================
+// Eliminar
+// =========================
 tbody.addEventListener("click", async (ev) => {
   const btn = ev.target.closest("button");
   if(!btn) return;
@@ -328,8 +285,7 @@ tbody.addEventListener("click", async (ev) => {
   const id = btn.getAttribute("data-del");
   if(!id) return;
 
-  const ok = confirm("¿Eliminar este registro?");
-  if(!ok) return;
+  if(!confirm("¿Eliminar este registro?")) return;
 
   try{
     await deleteDoc(doc(db, "expenses", id));
@@ -340,23 +296,37 @@ tbody.addEventListener("click", async (ev) => {
   }
 });
 
-/* =========================
-   Filtros + imprimir
-   ========================= */
+// =========================
+// Filtros + imprimir
+// =========================
 filterText.addEventListener("input", render);
 filterYear.addEventListener("change", render);
 
-btnPrint.addEventListener("click", printLast);
 btnRefresh.addEventListener("click", () => render());
 
-/* =========================
-   Inicialización
-   ========================= */
+// Imprimir último (tu función existente)
+btnPrint.addEventListener("click", printLast);
+
+// Imprimir listado (tu lógica existente)
+btnPrintAll?.addEventListener("click", () => {
+  document.body.classList.add("print-listado");
+  window.print();
+  document.body.classList.remove("print-listado");
+});
+
+// =========================
+// INIT
+// =========================
 (function init(){
-  // Fecha hoy por defecto
   $("date").valueAsDate = new Date();
+  // Importante: arrancamos live igualmente por ahora.
+  // Cuando cierres reglas, si no hay login, dará error -> y lo verás.
   startLive();
 })();
+
+// =========================
+// TU FUNCIÓN EXISTENTE (NO LA TOCO)
+// =========================
 function printLast() {
   const tbody = document.querySelector("tbody");
   if (!tbody) {
@@ -370,10 +340,7 @@ function printLast() {
     return;
   }
 
-  // El último gasto (más reciente) suele estar arriba:
   const fila = filas[0];
-
-  // Leemos celdas (según tu tabla: Nº, Fecha, Concepto, Proveedor, Categoría, Base, IVA, Total, Pago)
   const celdas = [...fila.querySelectorAll("td")].map(td => td.textContent.trim());
   const [n, fecha, concepto, proveedor, categoria, base, iva, total, pago] = celdas;
 
@@ -387,50 +354,29 @@ function printLast() {
       <meta charset="utf-8" />
       <title>Último gasto</title>
       <style>
-        @media print {
-          body { margin: 0; }
-        }
+        @media print { body { margin: 0; } }
         body{
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
           padding: 12px;
-          width: 74mm;           /* ancho típico ticket (58/80mm). Cambia a 58mm si quieres más estrecho */
+          width: 74mm;
           max-width: 74mm;
         }
-        .h1{
-          font-weight: 800;
-          font-size: 14px;
-          text-align: center;
-          letter-spacing: .5px;
-          margin: 6px 0 2px;
-        }
-        .sub{
-          text-align: center;
-          font-size: 11px;
-          margin: 0 0 10px;
-          opacity: .85;
-        }
+        .h1{ font-weight: 800; font-size: 14px; text-align: center; letter-spacing: .5px; margin: 6px 0 2px; }
+        .sub{ text-align: center; font-size: 11px; margin: 0 0 10px; opacity: .85; }
         .hr{ border-top: 1px dashed #000; margin: 8px 0; }
         .row{ display: flex; justify-content: space-between; gap: 10px; margin: 4px 0; }
         .k{ font-weight: 700; }
         .v{ text-align: right; white-space: nowrap; }
         .wrap{ white-space: normal; text-align: left; }
-        .big{
-          font-size: 13px;
-          font-weight: 900;
-        }
-        .foot{
-          margin-top: 10px;
-          font-size: 10px;
-          text-align: center;
-          opacity: .85;
-        }
+        .big{ font-size: 13px; font-weight: 900; }
+        .foot{ margin-top: 10px; font-size: 10px; text-align: center; opacity: .85; }
       </style>
     </head>
     <body>
       <div class="empresa">OBRANTIS, S.L.</div>
-<div class="empresa-sub">Control interno de gastos</div>
-<div class="h1">CONTROL DE GASTOS</div>
-<div class="sub">Ticket / ficha del último registro</div>
+      <div class="empresa-sub">Control interno de gastos</div>
+      <div class="h1">CONTROL DE GASTOS</div>
+      <div class="sub">Ticket / ficha del último registro</div>
 
       <div class="hr"></div>
 
@@ -471,9 +417,4 @@ function printLast() {
   w.document.write(html);
   w.document.close();
 }
-document.getElementById("btnPrintAll")?.addEventListener("click", () => {
-  document.body.classList.add("print-listado");
-  window.print();
-  document.body.classList.remove("print-listado");
-});
 
