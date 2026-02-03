@@ -4,7 +4,6 @@
 
 // 1) IMPORTS (SOLO AQUÍ, SOLO UNA VEZ)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getUserRole, can, ACTIONS, ROLES } from "./permissions.js";
 
 import {
   getFirestore, collection, addDoc, doc, runTransaction,
@@ -73,16 +72,11 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // Lista blanca de emails autorizados
-// Estado de rol (tiene que estar FUERA del Set)
-let CURRENT_ROLE = ROLES.NONE;
-
-// Lista blanca de emails autorizados
 const ALLOWED_EMAILS = new Set([
   "restaurantebarquilla@gmail.com",
   "rarbadea@gmail.com",
   "juancarlosgardy6@gmail.com"
 ]);
-
 const ADMIN_EMAIL = "juancarlosgardy6@gmail.com";
 let liveStarted = false;
 let currentEmail = null;
@@ -140,50 +134,20 @@ btnLogout.addEventListener("click", async () => {
 // Estado de autenticación
 onAuthStateChanged(auth, (user) => {
   console.log("[AUTH] estado:", user ? user.email : "NO logueado");
+  setAuthUI(user);
+currentEmail = user?.email ? user.email.toLowerCase() : null;
+console.log("[AUTH] currentEmail:", currentEmail);
 
-  // Caso 1: no hay login -> UI invitado (bloqueada)
   if (!user) {
-    currentEmail = null;
-    CURRENT_ROLE = ROLES.NONE;
-    setAuthUI(null);
     setStatus("Inicia sesión para acceder a los datos.", true);
     return;
   }
 
-  const email = (user?.email || "").toLowerCase().trim();
-  currentEmail = email;
-  console.log("[AUTH] currentEmail:", currentEmail);
-
-  // Caso 2: login pero NO autorizado -> forzamos UI invitado (bloqueada)
+  const email = (user.email || "").toLowerCase();
   if (!ALLOWED_EMAILS.has(email)) {
-    CURRENT_ROLE = ROLES.NONE;
-    setAuthUI(null);
     setStatus(`Usuario no autorizado: ${email}`, true);
     return;
   }
-
-  // Caso 3: autorizado -> UI logueada
-  setAuthUI(user);
-
-  CURRENT_ROLE = getUserRole(email, {
-    adminEmail: ADMIN_EMAIL,
-    allowedEmails: Array.from(ALLOWED_EMAILS),
-    editorsEmails: [],
-    viewersEmails: [],
-  });
-
-  console.log("[AUTH] email:", email, "role:", CURRENT_ROLE);
-
-  setStatus("Usuario autorizado. Cargando datos...");
-  if (!liveStarted) {
-    liveStarted = true;
-    startLive();
-  }
-});
-
-
-// Dejamos trazabilidad sin tocar la UI todavía
-console.log("[AUTH] email:", email, "role:", CURRENT_ROLE);
 
   setStatus("Usuario autorizado. Cargando datos...");
   if (!liveStarted) {
