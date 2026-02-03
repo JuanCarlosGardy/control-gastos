@@ -337,6 +337,10 @@ tbody.addEventListener("click", async (ev) => {
 
   const id = btn.getAttribute("data-del");
   if(!id) return;
+if ((currentEmail || "") !== ADMIN_EMAIL) {
+  alert("Solo el administrador puede eliminar registros.");
+  return;
+}
 
   if(!confirm("¿Eliminar este registro?")) return;
 
