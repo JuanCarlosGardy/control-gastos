@@ -73,12 +73,16 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // Lista blanca de emails autorizados
+// Estado de rol (tiene que estar FUERA del Set)
+let CURRENT_ROLE = ROLES.NONE;
+
+// Lista blanca de emails autorizados
 const ALLOWED_EMAILS = new Set([
-  let CURRENT_ROLE = ROLES.NONE;
   "restaurantebarquilla@gmail.com",
   "rarbadea@gmail.com",
   "juancarlosgardy6@gmail.com"
 ]);
+
 const ADMIN_EMAIL = "juancarlosgardy6@gmail.com";
 let liveStarted = false;
 let currentEmail = null;
