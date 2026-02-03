@@ -45,6 +45,71 @@ const filterText = $("filterText");
 const filterYear = $("filterYear");
 
 const sumBase = $("sumBase");
+/* ============================
+   AUTH - Google Login
+============================ */
+
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// Botones AUTH (deben existir en el HTML)
+const btnLogin  = $("btnLogin");
+const btnLogout = $("btnLogout");
+const userBadge = $("userBadge");
+
+console.log("[AUTH] botones:", {
+  btnLogin: !!btnLogin,
+  btnLogout: !!btnLogout,
+  userBadge: !!userBadge
+});
+
+function setAuthUI(user) {
+  if (user) {
+    btnLogin.style.display = "none";
+    btnLogout.style.display = "inline-flex";
+    userBadge.textContent = user.email;
+  } else {
+    btnLogin.style.display = "inline-flex";
+    btnLogout.style.display = "none";
+    userBadge.textContent = "Invitado";
+  }
+}
+
+onAuthStateChanged(auth, (user) => {
+  console.log("[AUTH] estado:", user ? user.email : "NO logueado");
+  setAuthUI(user);
+});
+
+btnLogin.addEventListener("click", async () => {
+  console.log("[AUTH] click login");
+  try {
+    await signInWithPopup(auth, provider);
+    console.log("[AUTH] login OK");
+  } catch (err) {
+    console.error("[AUTH] error login:", err);
+    alert("Error al iniciar sesión. Mira la consola.");
+  }
+});
+
+btnLogout.addEventListener("click", async () => {
+  console.log("[AUTH] click logout");
+  try {
+    await signOut(auth);
+    console.log("[AUTH] logout OK");
+  } catch (err) {
+    console.error("[AUTH] error logout:", err);
+    alert("Error al cerrar sesión.");
+  }
+});
+
 const sumVat = $("sumVat");
 const sumTotal = $("sumTotal");
 
