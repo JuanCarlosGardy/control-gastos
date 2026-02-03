@@ -321,7 +321,6 @@ btnPrintAll?.addEventListener("click", () => {
   $("date").valueAsDate = new Date();
   // Importante: arrancamos live igualmente por ahora.
   // Cuando cierres reglas, si no hay login, dará error -> y lo verás.
-  startLive();
 })();
 
 // =========================
