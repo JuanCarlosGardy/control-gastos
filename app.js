@@ -74,26 +74,34 @@ btnLogout.addEventListener("click", async () => {
 // Estado de autenticación
 onAuthStateChanged(auth, (user) => {
   console.log("[AUTH] estado:", user ? user.email : "NO logueado");
-  setAuthUI(user);
+  function setAuthUI(user) {
+  const logged = !!user;
 
-  if (!user) {
-    setStatus("Inicia sesión para acceder a los datos.", true);
-    return;
+  // Botones login/logout + badge
+  btnLogin.style.display = logged ? "none" : "inline-flex";
+  btnLogout.style.display = logged ? "inline-flex" : "none";
+  userBadge.textContent = logged ? (user.email || "Usuario") : "Invitado";
+
+  // Bloqueo de acciones si NO hay login
+  form.querySelectorAll("input, select, textarea, button").forEach(el => {
+    // Permitimos el botón de login siempre
+    if (el.id === "btnLogin") return;
+    el.disabled = !logged;
+  });
+
+  // Botones de arriba (si quieres bloquearlos también)
+  btnPrint.disabled = !logged;
+  btnPrintAll.disabled = !logged;
+  btnRefresh.disabled = !logged;
+
+  // Limpiar listado visual si NO hay login
+  if (!logged) {
+    tbody.innerHTML = "";
+    sumBase.textContent = "0,00";
+    sumVat.textContent = "0,00";
+    sumTotal.textContent = "0,00";
   }
-
-  const email = (user.email || "").toLowerCase();
-
-  if (!ALLOWED_EMAILS.has(email)) {
-    setStatus(`Usuario no autorizado: ${email}`, true);
-    return;
-  }
-
-  setStatus("Usuario autorizado. Cargando datos...");
-  if (!liveStarted) {
-    liveStarted = true;
-    startLive();
-  }
-});
+}
 
 
 // Logout
