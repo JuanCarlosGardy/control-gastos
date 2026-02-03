@@ -1,3 +1,4 @@
+console.log("[BOOT] app.js cargado OK");
 // 🔐 Auth
 import { 
   getAuth, 
