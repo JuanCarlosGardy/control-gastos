@@ -389,4 +389,9 @@ function printLast() {
   w.document.write(html);
   w.document.close();
 }
+document.getElementById("btnPrintAll")?.addEventListener("click", () => {
+  document.body.classList.add("print-listado");
+  window.print();
+  document.body.classList.remove("print-listado");
+});
 
