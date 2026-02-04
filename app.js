@@ -1,5 +1,5 @@
 // ================================
-// app.js (ESM) - Control de Gastos
+// app.js (ESM) - Control de Gastos OBRANTIS
 // ================================
 
 // 1) IMPORTS (SOLO AQUÍ, SOLO UNA VEZ)
