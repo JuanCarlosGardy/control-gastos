@@ -1,5 +1,5 @@
 // ================================
-// app.js (ESM) - Control de Gastos OBRANTIS
+// app.js (ESM) - Control de Gastos 
 // ================================
 
 // 1) IMPORTS (SOLO AQUÍ, SOLO UNA VEZ)
@@ -432,7 +432,7 @@ function printLast() {
     <body>
       <div class="empresa">OBRANTIS, S.L.</div>
       <div class="empresa-sub">Control interno de gastos</div>
-      <div class="h1">CONTROL DE GASTOS</div>
+      <div class="h1">CONTROL DE GASTOS OBRANTIS</div>
       <div class="sub">Ticket / ficha del último registro</div>
 
       <div class="hr"></div>
